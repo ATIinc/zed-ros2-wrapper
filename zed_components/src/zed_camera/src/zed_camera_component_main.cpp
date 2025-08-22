@@ -41,6 +41,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_JAZZY
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#elif defined FOUND_KILTED
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_ROLLING
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_FOXY
