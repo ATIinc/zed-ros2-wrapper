@@ -45,7 +45,7 @@ default_config_common = os.path.join(
     'config',
     'common'
 )
-    
+
 # FFMPEG Configuration to be loaded by ZED Node
 default_config_ffmpeg = os.path.join(
     get_package_share_directory('zed_wrapper'),
@@ -85,7 +85,7 @@ def parse_array_param(param):
 def launch_setup(context, *args, **kwargs):
     return_array = []
 
-    wrapper_dir = get_package_share_directory('zed_wrapper')    
+    wrapper_dir = get_package_share_directory('zed_wrapper')
 
     # Launch configuration variables
     node_log_type = LaunchConfiguration('node_log_type')
@@ -117,6 +117,7 @@ def launch_setup(context, *args, **kwargs):
     camera_id = LaunchConfiguration('camera_id')
 
     publish_urdf = LaunchConfiguration('publish_urdf')
+    frame_prefix = LaunchConfiguration('frame_prefix')
     publish_tf = LaunchConfiguration('publish_tf')
     publish_map_tf = LaunchConfiguration('publish_map_tf')
     publish_imu_tf = LaunchConfiguration('publish_imu_tf')
@@ -152,18 +153,18 @@ def launch_setup(context, *args, **kwargs):
         return [
             LogInfo(msg="Please set a positive value for the 'custom_baseline' argument when using a 'virtual' Stereo Camera with two ZED X One devices."),
         ]
-    
+
     if(namespace_val == ''):
         namespace_val = camera_name_val
     else:
         node_name_val = camera_name_val
-    
+
     # Common configuration file
-    if (camera_model_val == 'zed' or 
-        camera_model_val == 'zedm' or 
-        camera_model_val == 'zed2' or 
-        camera_model_val == 'zed2i' or 
-        camera_model_val == 'zedx' or 
+    if (camera_model_val == 'zed' or
+        camera_model_val == 'zedm' or
+        camera_model_val == 'zed2' or
+        camera_model_val == 'zed2i' or
+        camera_model_val == 'zedx' or
         camera_model_val == 'zedxm' or
         camera_model_val == 'virtual'):
         config_common_path_val = default_config_common + '_stereo.yaml'
@@ -190,7 +191,7 @@ def launch_setup(context, *args, **kwargs):
     # Object Detection configuration file
     info = 'Using Object Detection configuration file: ' + object_detection_config_path.perform(context)
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
-    
+
     # Custom Object Detection configuration file
     info = 'Using Custom Object Detection configuration file: ' + custom_object_detection_config_path.perform(context)
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
@@ -214,7 +215,7 @@ def launch_setup(context, *args, **kwargs):
     xacro_command.append(camera_model_val)
     xacro_command.append(' ')
     xacro_command.append('custom_baseline:=')
-    xacro_command.append(custom_baseline_val)   
+    xacro_command.append(custom_baseline_val)
     if(enable_gnss_val=='true'):
         xacro_command.append(' ')
         xacro_command.append('enable_gnss:=true')
@@ -242,6 +243,7 @@ def launch_setup(context, *args, **kwargs):
         parameters=[{
             'use_sim_time': publish_svo_clock,
             'robot_description': Command(xacro_command)
+            'frame_prefix': frame_prefix,
         }]
     )
     return_array.append(rsp_node)
@@ -255,7 +257,7 @@ def launch_setup(context, *args, **kwargs):
             container_exec='component_container'
         else:
             container_exec='component_container_isolated'
-        
+
         zed_container = ComposableNodeContainer(
                 name=container_name_val,
                 namespace=namespace_val,
@@ -280,7 +282,7 @@ def launch_setup(context, *args, **kwargs):
     if( ros_params_override_path_val != ''):
         node_parameters.append(ros_params_override_path)
 
-    node_parameters.append( 
+    node_parameters.append(
             # Launch arguments must override the YAML files values
             {
                 'use_sim_time': use_sim_time,
@@ -328,11 +330,11 @@ def launch_setup(context, *args, **kwargs):
             parameters=node_parameters,
             extra_arguments=[{'use_intra_process_comms': True}]
         )
-    
+
     full_container_name = '/' + namespace_val + '/' + container_name_val
     info = 'Loading ZED node `' + node_name_val + '` in container `' + full_container_name + '`'
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
-    
+
     load_composable_node = LoadComposableNodes(
         target_container=full_container_name,
         composable_node_descriptions=[zed_wrapper_component]
