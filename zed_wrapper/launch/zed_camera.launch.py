@@ -242,7 +242,7 @@ def launch_setup(context, *args, **kwargs):
         output=node_log_effective,
         parameters=[{
             'use_sim_time': publish_svo_clock,
-            'robot_description': Command(xacro_command)
+            'robot_description': Command(xacro_command),
             'frame_prefix': frame_prefix,
         }]
     )
@@ -297,6 +297,7 @@ def launch_setup(context, *args, **kwargs):
                 'svo.publish_svo_clock': publish_svo_clock,
                 'general.serial_number': serial_number,
                 'general.camera_id': camera_id,
+                'general.frame_prefix': frame_prefix,
                 'pos_tracking.publish_tf': publish_tf,
                 'pos_tracking.publish_map_tf': publish_map_tf,
                 'sensors.publish_imu_tf': publish_imu_tf,

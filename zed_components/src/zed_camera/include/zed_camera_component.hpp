@@ -603,6 +603,8 @@ private:
   // <---- QoS
 
   // ----> Frame IDs
+  std::string mFramePrefix;
+
   std::string mRgbFrameId;
   std::string mRgbOptFrameId;
 
