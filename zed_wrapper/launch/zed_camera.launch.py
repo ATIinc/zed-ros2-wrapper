@@ -109,6 +109,7 @@ def launch_setup(context, *args, **kwargs):
     camera_ids = LaunchConfiguration('camera_ids')
 
     publish_urdf = LaunchConfiguration('publish_urdf')
+    frame_prefix = LaunchConfiguration('frame_prefix')
     publish_tf = LaunchConfiguration('publish_tf')
     publish_map_tf = LaunchConfiguration('publish_map_tf')
     publish_imu_tf = LaunchConfiguration('publish_imu_tf')
@@ -155,13 +156,13 @@ def launch_setup(context, *args, **kwargs):
         namespace_val = camera_name_val
     else:
         node_name_val = camera_name_val
-    
+
     # Common configuration file
-    if (camera_model_val == 'zed' or 
-        camera_model_val == 'zedm' or 
-        camera_model_val == 'zed2' or 
-        camera_model_val == 'zed2i' or 
-        camera_model_val == 'zedx' or 
+    if (camera_model_val == 'zed' or
+        camera_model_val == 'zedm' or
+        camera_model_val == 'zed2' or
+        camera_model_val == 'zed2i' or
+        camera_model_val == 'zedx' or
         camera_model_val == 'zedxm' or
         camera_model_val == 'zedxhdr' or
         camera_model_val == 'zedxhdrmini' or
@@ -187,7 +188,7 @@ def launch_setup(context, *args, **kwargs):
     # Object Detection configuration file
     info = 'Using Object Detection configuration file: ' + object_detection_config_path.perform(context)
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
-    
+
     # Custom Object Detection configuration file
     info = 'Using Custom Object Detection configuration file: ' + custom_object_detection_config_path.perform(context)
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
@@ -236,7 +237,8 @@ def launch_setup(context, *args, **kwargs):
         output=node_log_effective,
         parameters=[{
             'use_sim_time': publish_svo_clock,
-            'robot_description': Command(xacro_command)
+            'robot_description': Command(xacro_command),
+            'frame_prefix': frame_prefix
         }],
         remappings=[('robot_description', camera_name_val+'_description')]
     )
@@ -277,7 +279,7 @@ def launch_setup(context, *args, **kwargs):
     if( ros_params_override_path_val != ''):
         node_parameters.append(ros_params_override_path)
 
-    node_parameters.append( 
+    node_parameters.append(
             # Launch arguments must override the YAML files values
             {
                 'use_sim_time': use_sim_time,
@@ -329,11 +331,11 @@ def launch_setup(context, *args, **kwargs):
             parameters=node_parameters,
             extra_arguments=[{'use_intra_process_comms': enable_ipc}]
         )
-    
+
     full_container_name = '/' + namespace_val + '/' + container_name_val
     info = 'Loading ZED node `' + node_name_val + '` in container `' + full_container_name + '`'
     return_array.append(LogInfo(msg=TextSubstitution(text=info)))
-    
+
     load_composable_node = LoadComposableNodes(
         target_container=full_container_name,
         composable_node_descriptions=[zed_wrapper_component]
