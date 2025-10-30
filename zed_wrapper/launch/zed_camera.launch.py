@@ -294,6 +294,7 @@ def launch_setup(context, *args, **kwargs):
                 'svo.publish_svo_clock': publish_svo_clock,
                 'general.serial_number': serial_number,
                 'general.camera_id': camera_id,
+                'general.frame_prefix': frame_prefix,
                 'pos_tracking.publish_tf': publish_tf,
                 'pos_tracking.publish_map_tf': publish_map_tf,
                 'sensors.publish_imu_tf': publish_imu_tf,

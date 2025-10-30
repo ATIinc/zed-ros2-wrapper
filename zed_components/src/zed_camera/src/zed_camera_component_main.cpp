@@ -984,6 +984,11 @@ void ZedCamera::getGeneralParams()
     shared_from_this(), "general.camera_name", mCameraName,
     mCameraName, " * Camera name: ");
 
+  sl_tools::getParam(
+    shared_from_this(), "general.frame_prefix", mFramePrefix,
+    mFramePrefix, " * Frame prefix: "
+  );
+
   if (!mSvoMode) {
     if (mCamUserModel == sl::MODEL::VIRTUAL_ZED_X) {
       std::string array_param = "[]";
@@ -1460,8 +1465,7 @@ void ZedCamera::getPosTrackingParams()
     get_logger(), " * Positional tracking mode: "
       << sl::toString(mPosTrkMode).c_str());
 
-  mBaseFrameId = mCameraName;
-  mBaseFrameId += "_camera_link";
+  mBaseFrameId = mFramePrefix + mCameraName + "_camera_link";
 
   sl_tools::getParam(
     shared_from_this(), "pos_tracking.map_frame", mMapFrameId,
@@ -1649,7 +1653,7 @@ void ZedCamera::getGnssFusionParams()
     " * GNSS fusion enabled: ");
 
   if (mGnssFusionEnabled) {
-    mGnssFrameId = mCameraName + "_gnss_link";
+    mGnssFrameId = mFramePrefix + mCameraName + "_gnss_link";
 
     sl_tools::getParam(
       shared_from_this(), "gnss_fusion.gnss_fix_topic",
@@ -1983,13 +1987,13 @@ rcl_interfaces::msg::SetParametersResult ZedCamera::callback_dynamicParamChange(
 void ZedCamera::setTFCoordFrameNames()
 {
   // ----> Coordinate frames
-  mCenterFrameId = mCameraName + "_camera_center";
-  mLeftCamFrameId = mCameraName + "_left_camera_frame";
-  mLeftCamOptFrameId = mCameraName + "_left_camera_frame_optical";
-  mRightCamFrameId = mCameraName + "_right_camera_frame";
-  mRightCamOptFrameId = mCameraName + "_right_camera_frame_optical";
+  mCenterFrameId = mFramePrefix + mCameraName + "_camera_center";
+  mLeftCamFrameId = mFramePrefix + mCameraName + "_left_camera_frame";
+  mLeftCamOptFrameId = mFramePrefix + mCameraName + "_left_camera_optical_frame";
+  mRightCamFrameId = mFramePrefix + mCameraName + "_right_camera_frame";
+  mRightCamOptFrameId = mFramePrefix + mCameraName + "_right_camera_optical_frame";
 
-  mImuFrameId = mCameraName + "_imu_link";
+  mImuFrameId = mFramePrefix + mCameraName + "_imu_link";
   mBaroFrameId = mCenterFrameId;         // mCameraName + "_baro_link";
   mMagFrameId = mImuFrameId;             // mCameraName + "_mag_link";
   mTempLeftFrameId = mLeftCamFrameId;    // mCameraName + "_temp_left_link";

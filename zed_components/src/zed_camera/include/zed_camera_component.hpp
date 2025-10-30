@@ -696,6 +696,7 @@ private:
   // ----> Frame IDs
   bool mStaticTfPublished = false;
   bool mStaticImuTfPublished = false;
+  std::string mFramePrefix;
 
   std::string mBaseFrameId = "";
   std::string mCenterFrameId = "";
