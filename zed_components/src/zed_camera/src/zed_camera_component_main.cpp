@@ -913,9 +913,8 @@ void ZedCamera::getGeneralParams()
     mCameraName, " * Camera name: ");
 
   sl_tools::getParam(
-    shared_from_this(), "general.frame_prefix", mFramePrefix,
-    mFramePrefix, " * Frame prefix: "
-  );
+    shared_from_this(), "general.frame_prefix",
+    mFramePrefix, mFramePrefix, " * Frame prefix: ", false, "");
 
   if (!mSvoMode) {
     sl_tools::getParam(
