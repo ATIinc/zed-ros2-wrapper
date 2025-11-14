@@ -403,6 +403,11 @@ def generate_launch_description():
                 description='Enable URDF processing and starts Robot State Published to propagate static TF.',
                 choices=['true', 'false']),
             DeclareLaunchArgument(
+                'frame_prefix',
+                default_value='',
+                description='Prefix published frames with this value.',
+            ),
+            DeclareLaunchArgument(
                 'publish_tf',
                 default_value='true',
                 description='Enable publication of the `odom -> camera_link` TF.',
