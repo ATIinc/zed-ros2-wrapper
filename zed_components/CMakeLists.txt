@@ -15,7 +15,7 @@ if(DEFINED ENV{ROS_DISTRO})
     #message("* Found ROS2 ${FOUND_ROS2_DISTRO}")
 else()
     message("* ROS2 distro variable not set. Trying to figure it out...")
-    set(ROS2_DISTROS "ardent;crystal;dashing;eloquent;foxy;galactic;humble;jazzy;kilted;rolling")
+    set(ROS2_DISTROS "ardent;bouncy;crystal;dashing;eloquent;foxy;galactic;humble;iron;jazzy;kilted;rolling")
     set(ROS2_FOUND FALSE)
     foreach(distro ${ROS2_DISTROS})
         if(NOT ROS2_FOUND)
@@ -199,6 +199,7 @@ set(SL_TOOLS_SRC
 
 set(ZED_CAMERA_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include/visibility_control.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include/sl_version.hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera/include/zed_camera_component.hpp
 )
 
@@ -211,11 +212,14 @@ set(ZED_CAMERA_SRC
 
 set(ZED_CAMERA_ONE_INC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include/visibility_control.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera/include/zed_camera_one_component.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/include/sl_version.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera_one/include/zed_camera_one_component.hpp
 )
 
 set(ZED_CAMERA_ONE_SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera/src/zed_camera_one_component.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera_one/src/zed_camera_one_component_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera_one/src/zed_camera_one_component_sensors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/zed_camera_one/src/zed_camera_one_component_video.cpp
 )
 ###############################################################################
 # Bin and Install

@@ -1,4 +1,4 @@
-// Copyright 2024 Stereolabs
+// Copyright 2025 Stereolabs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include <sl/Fusion.hpp>
 #include <unordered_set>
 
+#include "sl_version.hpp"
 #include "sl_tools.hpp"
 #include "sl_types.hpp"
 #include "visibility_control.hpp"
@@ -37,16 +38,18 @@ public:
 
 protected:
   // ----> Initialization functions
-  void init();
+  void initNode();
+  void deInitNode();
+
   void initParameters();
   void initServices();
   void initThreads();
 
-  void close();
-
   void getDebugParams();
+  void getTopicEnableParams();
   void getSimParams();
   void getGeneralParams();
+  void getSvoParams();
   void getVideoParams();
   void getRoiParams();
   void getDepthParams();
@@ -62,11 +65,14 @@ protected:
 
   void setTFCoordFrameNames();
   void initPublishers();
+  void initVideoDepthPublishers();
+
   void initSubscribers();
+
   void fillCamInfo(
-    const std::shared_ptr<sl::Camera> zed,
-    const std::shared_ptr<sensor_msgs::msg::CameraInfo> & leftCamInfoMsg,
-    const std::shared_ptr<sensor_msgs::msg::CameraInfo> & rightCamInfoMsg,
+    const std::shared_ptr<sl::Camera> & zed,
+    const sensor_msgs::msg::CameraInfo::SharedPtr & leftCamInfoMsg,
+    const sensor_msgs::msg::CameraInfo::SharedPtr & rightCamInfoMsg,
     const std::string & leftFrameId, const std::string & rightFrameId,
     bool rawParam = false);
 
@@ -220,29 +226,48 @@ protected:
   // <---- Thread functions
 
   // ----> Publishing functions
+
   void publishImageWithInfo(
-    sl::Mat & img,
-    image_transport::CameraPublisher & pubImg,
-    camInfoMsgPtr & camInfoMsg, std::string imgFrameId,
-    rclcpp::Time t);
+    const sl::Mat & img,
+    const image_transport::Publisher & pubImg,
+    const camInfoPub & infoPub,
+    const camInfoPub & infoPubTrans,
+    camInfoMsgPtr & camInfoMsg,
+    const std::string & imgFrameId,
+    const rclcpp::Time & t);
+#ifdef FOUND_ISAAC_ROS_NITROS
+  void publishImageWithInfo(
+    const sl::Mat & img,
+    const nitrosImgPub & nitrosPubImg,
+    const camInfoPub & infoPub,
+    const camInfoPub & infoPubTrans,
+    camInfoMsgPtr & camInfoMsg,
+    const std::string & imgFrameId,
+    const rclcpp::Time & t);
+#endif
+  void publishCameraInfo(
+    const camInfoPub & infoPub,
+    camInfoMsgPtr & camInfoMsg, const rclcpp::Time & t);
+
   void publishDepthMapWithInfo(sl::Mat & depth, rclcpp::Time t);
   void publishDisparity(sl::Mat disparity, rclcpp::Time t);
 
   void processVideoDepth();
   bool areVideoDepthSubscribed();
-  void retrieveVideoDepth();
-  bool retrieveLeftImage();
-  bool retrieveLeftRawImage();
-  bool retrieveRightImage();
-  bool retrieveRightRawImage();
-  bool retrieveLeftGrayImage();
-  bool retrieveLeftRawGrayImage();
-  bool retrieveRightGrayImage();
-  bool retrieveRightRawGrayImage();
-  bool retrieveDepthMap();
+  void retrieveVideoDepth(bool gpu);
+  bool retrieveLeftImage(bool gpu);
+  bool retrieveLeftRawImage(bool gpu);
+  bool retrieveRightImage(bool gpu);
+  bool retrieveRightRawImage(bool gpu);
+  bool retrieveLeftGrayImage(bool gpu);
+  bool retrieveLeftRawGrayImage(bool gpu);
+  bool retrieveRightGrayImage(bool gpu);
+  bool retrieveRightRawGrayImage(bool gpu);
+  bool retrieveDepthMap(bool gpu);
+  bool retrieveConfidence(bool gpu);
   bool retrieveDisparity();
-  bool retrieveConfidence();
   bool retrieveDepthInfo();
+
   void publishVideoDepth(rclcpp::Time & out_pub_ts);
   void publishLeftAndRgbImages(const rclcpp::Time & t);
   void publishLeftRawAndRgbRawImages(const rclcpp::Time & t);
@@ -258,6 +283,7 @@ protected:
   void publishConfidenceMap(const rclcpp::Time & t);
   void publishDisparityImage(const rclcpp::Time & t);
   void publishDepthInfo(const rclcpp::Time & t);
+  void publishCameraInfos(); // Used to publish camera infos when no video/depth is subscribed
 
   void checkRgbDepthSync();
   bool checkGrabAndUpdateTimestamp(rclcpp::Time & out_pub_ts);
@@ -268,14 +294,17 @@ protected:
   void publishImuFrameAndTopic();
 
   void publishOdom(
-    tf2::Transform & odom2baseTransf, sl::Pose & slPose,
+    tf2::Transform & odom2baseTransf, sl::Pose & slPose, const tf2::Vector3 & linear_velocity,
+    const tf2::Vector3 & angular_velocity,
     rclcpp::Time t);
   void publishPose();
+  void publishPoseLandmarks();
   void publishGnssPose();
   void publishPoseStatus();
   void publishGnssPoseStatus();
   void publishGeoPoseStatus();
   void publishTFs(rclcpp::Time t);
+  void publishCameraTFs(rclcpp::Time t);
   void publishOdomTF(rclcpp::Time t);
   void publishPoseTF(rclcpp::Time t);
   bool publishSensorsData(rclcpp::Time force_ts = TIMEZERO_ROS);
@@ -328,7 +357,6 @@ protected:
   void startTempPubTimer();
   void startHeartbeatTimer();
 
-
   // Region of Interest
   std::string getParam(
     std::string paramName,
@@ -356,6 +384,31 @@ private:
 
   // ----> Topics
   std::string mTopicRoot = "~/";
+
+  // Image Topics
+  std::string mLeftTopic;
+  std::string mLeftRawTopic;
+  std::string mRightTopic;
+  std::string mRightRawTopic;
+  std::string mRgbTopic;
+  std::string mRgbRawTopic;
+  std::string mStereoTopic;
+  std::string mStereoRawTopic;
+  std::string mLeftGrayTopic;
+  std::string mLeftRawGrayTopic;
+  std::string mRightGrayTopic;
+  std::string mRightRawGrayTopic;
+  std::string mRgbGrayTopic;
+  std::string mRgbRawGrayTopic;
+
+  // Depth Topics
+  std::string mDisparityTopic;
+  std::string mDepthTopic;
+  std::string mDepthInfoTopic;
+  std::string mConfMapTopic;
+  std::string mPointcloudTopic;
+
+  // Localization Topics
   std::string mOdomTopic;
   std::string mPoseTopic;
   std::string mPoseStatusTopic;
@@ -367,6 +420,7 @@ private:
   std::string mFusedFixTopic;
   std::string mOriginFixTopic;
   std::string mPointcloudFusedTopic;
+  std::string mPointcloud3DLandmarksTopic;
   std::string mObjectDetTopic;
   std::string mBodyTrkTopic;
   std::string mOdomPathTopic;
@@ -376,11 +430,13 @@ private:
   // <---- Topics
 
   // ----> Parameter variables
+  // Debug
   bool _debugCommon = false;
   bool _debugSim = false;
   bool _debugVideoDepth = false;
   bool _debugCamCtrl = false;
   bool _debugPointCloud = false;
+  bool _debugTf = false;
   bool _debugPosTracking = false;
   bool _debugGnss = false;
   bool _debugSensors = false;
@@ -390,9 +446,44 @@ private:
   bool _debugAdvanced = false;
   bool _debugRoi = false;
   bool _debugStreaming = false;
+  bool _debugNitros = false;
+  // If available, force disable NITROS usage for debugging and testing
+  // purposes; otherwise, this is always true.
+  bool _nitrosDisabled = false;
 
+  // Topic Enablers
+#if (ZED_SDK_MAJOR_VERSION * 10 + ZED_SDK_MINOR_VERSION) >= 51
+  bool m24bitMode = false;
+#endif
+  bool mPublishSensImu = true;
+  bool mPublishSensImuRaw = false;
+  bool mPublishSensMag = false;
+  bool mPublishSensBaro = false;
+  bool mPublishSensTemp = false;
+  bool mPublishSensImuTransf = false;
+  bool mPublishImgLeftRight = false;
+  bool mPublishImgRaw = false;
+  bool mPublishImgGray = false;
+  bool mPublishImgRgb = true;
+  bool mPublishImgStereo = false;
+  bool mPublishImgRoiMask = false;
+  bool mPublishOdomPose = true;
+  bool mPublishPoseCov = false;
+  bool mPublishPath = false;
+  bool mPublishDetPlane = false;
+  bool mPublishDepthMap = true;
+  bool mPublishDepthInfo = false;
+  bool mPublishPointcloud = true;
+  bool mPublishConfidence = false;
+  bool mPublishDisparity = false;
+  bool mPublishStatus = true;
+  bool mPublishSvoClock = false;
+
+  // General
   int mCamSerialNumber = 0;
   int mCamId = -1;
+  std::vector<int> mCamVirtualSerialNumbers;
+  std::vector<int> mCamVirtualCameraIds;
   bool mSimMode = false;     // Expecting simulation data?
   bool mUseSimTime = false;  // Use sim time?
   std::string mSimAddr =
@@ -418,7 +509,7 @@ private:
   double mSvoRate = 1.0;
   double mSvoExpectedPeriod = 0.0;
   bool mUseSvoTimestamp = false;
-  bool mPublishSvoClock = false;
+  bool mUsePubTimestamps = false;
   bool mGrabOnce = false;
   bool mGrabImuOnce = false;
   int mVerbose = 1;
@@ -461,6 +552,7 @@ private:
   bool mPoseSmoothing = false;
   bool mAreaMemory = true;
   std::string mAreaMemoryFilePath = "";
+  bool mLocalizationOnly = false;
   sl::POSITIONAL_TRACKING_MODE mPosTrkMode =
     sl::POSITIONAL_TRACKING_MODE::GEN_1;
   bool mSaveAreaMemoryOnClosing = true;
@@ -471,13 +563,14 @@ private:
   std::vector<double> mInitialBasePose = std::vector<double>(6, 0.0);
   bool mResetOdomWhenLoopClosure = true;
   bool mResetPoseWithSvoLoop = true;
+  bool mPublish3DLandmarks = false;
+  uint8_t mPublishLandmarkSkipFrame = 15;
   double mPathPubRate = 2.0;
   double mTfOffset = 0.0;
   float mPosTrackDepthMinRange = 0.0f;
   bool mSetAsStatic = false;
   bool mSetGravityAsOrigin = false;
   int mPathMaxCount = -1;
-  bool mPublishPoseCov = true;
 
   bool mGnssFusionEnabled = false;
   std::string mGnssTopic = "/gps/fix";
@@ -527,7 +620,6 @@ private:
   std::unordered_map<int, sl::CustomObjectDetectionProperties> mCustomOdProperties;
   std::unordered_map<int, std::string> mCustomLabels;
   std::unordered_map<std::string, int> mCustomClassIdMap;
-
 
   bool mBodyTrkEnabled = false;
   sl::BODY_TRACKING_MODEL mBodyTrkModel =
@@ -603,42 +695,33 @@ private:
   // <---- QoS
 
   // ----> Frame IDs
-  std::string mFramePrefix;
+  bool mStaticTfPublished = false;
+  bool mStaticImuTfPublished = false;
 
-  std::string mRgbFrameId;
-  std::string mRgbOptFrameId;
+  std::string mBaseFrameId = "";
+  std::string mCenterFrameId = "";
 
-  std::string mDepthFrameId;
-  std::string mDepthOptFrameId;
+  std::string mRightCamFrameId = "";
+  std::string mRightCamOptFrameId = "";
+  std::string mLeftCamFrameId = "";
+  std::string mLeftCamOptFrameId = "";
 
-  std::string mDisparityFrameId;
-  std::string mDisparityOptFrameId;
+  std::string mImuFrameId = "";
+  std::string mBaroFrameId = "";
+  std::string mMagFrameId = "";
+  std::string mTempLeftFrameId = "";
+  std::string mTempRightFrameId = "";
 
-  std::string mConfidenceFrameId;
-  std::string mConfidenceOptFrameId;
+  std::string mDepthFrameId = "";
+  std::string mDepthOptFrameId = "";
 
-  std::string mCloudFrameId;
-  std::string mPointCloudFrameId;
+  std::string mPointCloudFrameId = "";
 
   std::string mUtmFrameId = "utm";
   std::string mMapFrameId = "map";
   std::string mOdomFrameId = "odom";
-  std::string mBaseFrameId = "";
   std::string mGnssFrameId = "";
   std::string mGnssOriginFrameId = "gnss_ref_pose";
-
-  std::string mCameraFrameId;
-
-  std::string mRightCamFrameId;
-  std::string mRightCamOptFrameId;
-  std::string mLeftCamFrameId;
-  std::string mLeftCamOptFrameId;
-
-  std::string mImuFrameId;
-  std::string mBaroFrameId;
-  std::string mMagFrameId;
-  std::string mTempLeftFrameId;
-  std::string mTempRightFrameId;
   // <---- Frame IDs
 
   // ----> Stereolabs Mat Info
@@ -654,6 +737,7 @@ private:
   // ----> initialization Transform listener
   std::unique_ptr<tf2_ros::Buffer> mTfBuffer;
   std::unique_ptr<tf2_ros::TransformListener> mTfListener;
+  std::unique_ptr<tf2_ros::StaticTransformBroadcaster> mStaticTfBroadcaster;
   std::unique_ptr<tf2_ros::TransformBroadcaster> mTfBroadcaster;
   // <---- initialization Transform listener
 
@@ -664,6 +748,8 @@ private:
   tf2::Transform mMap2BaseTransf;   // Coordinates of the base in map frame
   tf2::Transform
     mSensor2BaseTransf;    // Coordinates of the base frame in sensor frame
+  tf2::Vector3 linear_base; // Linear twist in the camera base link frame
+  tf2::Vector3 angular_base; // Angular twist in the camera base link frame
   tf2::Transform
     mSensor2CameraTransf;    // Coordinates of the camera frame in sensor frame
   tf2::Transform
@@ -691,55 +777,106 @@ private:
 
   // ----> Messages (ONLY THOSE NOT CHANGING WHILE NODE RUNS)
   // Camera infos
-  camInfoMsgPtr mRgbCamInfoMsg;
   camInfoMsgPtr mLeftCamInfoMsg;
   camInfoMsgPtr mRightCamInfoMsg;
-  camInfoMsgPtr mRgbCamInfoRawMsg;
   camInfoMsgPtr mLeftCamInfoRawMsg;
   camInfoMsgPtr mRightCamInfoRawMsg;
-  camInfoMsgPtr mDepthCamInfoMsg;
   // <---- Messages
 
   // ----> Publishers
   clockPub mPubClock;
 
-  image_transport::CameraPublisher mPubRgb;
-  image_transport::CameraPublisher mPubRawRgb;
-  image_transport::CameraPublisher mPubLeft;
-  image_transport::CameraPublisher mPubRawLeft;
-  image_transport::CameraPublisher mPubRight;
-  image_transport::CameraPublisher mPubRawRight;
-  image_transport::CameraPublisher mPubDepth;
+  // Image publishers with camera info
+  image_transport::Publisher mPubRgb;
+  image_transport::Publisher mPubRawRgb;
+  image_transport::Publisher mPubLeft;
+  image_transport::Publisher mPubRawLeft;
+  image_transport::Publisher mPubRight;
+  image_transport::Publisher mPubRawRight;
+  image_transport::Publisher mPubRgbGray;
+  image_transport::Publisher mPubRawRgbGray;
+  image_transport::Publisher mPubLeftGray;
+  image_transport::Publisher mPubRawLeftGray;
+  image_transport::Publisher mPubRightGray;
+  image_transport::Publisher mPubRawRightGray;
+  image_transport::Publisher mPubRoiMask;
+  image_transport::Publisher mPubDepth;
+  image_transport::Publisher mPubConfMap;
+#ifdef FOUND_ISAAC_ROS_NITROS
+  // Nitros image publishers with camera info
+  nitrosImgPub mNitrosPubRgb;
+  nitrosImgPub mNitrosPubRawRgb;
+  nitrosImgPub mNitrosPubLeft;
+  nitrosImgPub mNitrosPubRawLeft;
+  nitrosImgPub mNitrosPubRight;
+  nitrosImgPub mNitrosPubRawRight;
+  nitrosImgPub mNitrosPubRgbGray;
+  nitrosImgPub mNitrosPubRawRgbGray;
+  nitrosImgPub mNitrosPubLeftGray;
+  nitrosImgPub mNitrosPubRawLeftGray;
+  nitrosImgPub mNitrosPubRightGray;
+  nitrosImgPub mNitrosPubRawRightGray;
+  nitrosImgPub mNitrosPubRoiMask;
+  nitrosImgPub mNitrosPubDepth;
+  nitrosImgPub mNitrosPubConfMap;
+#endif
+
+  // Image publishers without camera info (no NITROS)
   image_transport::Publisher mPubStereo;
   image_transport::Publisher mPubRawStereo;
 
-  image_transport::CameraPublisher mPubRgbGray;
-  image_transport::CameraPublisher mPubRawRgbGray;
-  image_transport::CameraPublisher mPubLeftGray;
-  image_transport::CameraPublisher mPubRawLeftGray;
-  image_transport::CameraPublisher mPubRightGray;
-  image_transport::CameraPublisher mPubRawRightGray;
+  // Camera Info publishers
+  camInfoPub mPubRgbCamInfo;
+  camInfoPub mPubRawRgbCamInfo;
+  camInfoPub mPubLeftCamInfo;
+  camInfoPub mPubRawLeftCamInfo;
+  camInfoPub mPubRightCamInfo;
+  camInfoPub mPubRawRightCamInfo;
+  camInfoPub mPubRgbGrayCamInfo;
+  camInfoPub mPubRawRgbGrayCamInfo;
+  camInfoPub mPubLeftGrayCamInfo;
+  camInfoPub mPubRawLeftGrayCamInfo;
+  camInfoPub mPubRightGrayCamInfo;
+  camInfoPub mPubRawRightGrayCamInfo;
+  camInfoPub mPubRoiMaskCamInfo;
+  camInfoPub mPubDepthCamInfo;
+  camInfoPub mPubConfMapCamInfo;
+  camInfoPub mPubRgbCamInfoTrans;
+  camInfoPub mPubRawRgbCamInfoTrans;
+  camInfoPub mPubLeftCamInfoTrans;
+  camInfoPub mPubRawLeftCamInfoTrans;
+  camInfoPub mPubRightCamInfoTrans;
+  camInfoPub mPubRawRightCamInfoTrans;
+  camInfoPub mPubRgbGrayCamInfoTrans;
+  camInfoPub mPubRawRgbGrayCamInfoTrans;
+  camInfoPub mPubLeftGrayCamInfoTrans;
+  camInfoPub mPubRawLeftGrayCamInfoTrans;
+  camInfoPub mPubRightGrayCamInfoTrans;
+  camInfoPub mPubRawRightGrayCamInfoTrans;
+  camInfoPub mPubRoiMaskCamInfoTrans;
+  camInfoPub mPubDepthCamInfoTrans;
+  camInfoPub mPubConfMapCamInfoTrans;
 
-  image_transport::CameraPublisher mPubRoiMask;
-
-#ifndef FOUND_FOXY
+#ifdef FOUND_POINT_CLOUD_TRANSPORT
   point_cloud_transport::Publisher mPubCloud;
   point_cloud_transport::Publisher mPubFusedCloud;
+  point_cloud_transport::Publisher mPub3DLandmarks;
 #else
   pointcloudPub mPubCloud;
   pointcloudPub mPubFusedCloud;
+  pointcloudPub mPub3DLandmarks;
 #endif
 
   svoStatusPub mPubSvoStatus;
   healthStatusPub mPubHealthStatus;
   heartbeatStatusPub mPubHeartbeatStatus;
-  imagePub mPubConfMap;
   disparityPub mPubDisparity;
   posePub mPubPose;
   poseStatusPub mPubPoseStatus;
   poseCovPub mPubPoseCov;
   odomPub mPubOdom;
   odomPub mPubGnssPose;
+  int mFrameSkipCountLandmarks = 0;
   gnssFusionStatusPub mPubGnssPoseStatus;
   pathPub mPubOdomPath;
   pathPub mPubPosePath;
@@ -905,6 +1042,7 @@ private:
 
   // ----> Diagnostic
   sl_tools::StopWatch mUptimer;
+  bool mUsingIPC = false;
   float mTempImu = NOT_VALID_TEMP;
   float mTempLeft = NOT_VALID_TEMP;
   float mTempRight = NOT_VALID_TEMP;

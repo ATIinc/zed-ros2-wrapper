@@ -39,8 +39,6 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_JAZZY
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
-#elif defined FOUND_KILTED
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_ROLLING
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #elif defined FOUND_FOXY
@@ -912,11 +910,6 @@ void ZedCamera::getGeneralParams()
     shared_from_this(), "general.camera_name", mCameraName,
     mCameraName, " * Camera name: ");
 
-  sl_tools::getParam(
-    shared_from_this(), "general.frame_prefix", mFramePrefix,
-    mFramePrefix, " * Frame prefix: "
-  );
-
   if (!mSvoMode) {
     sl_tools::getParam(
       shared_from_this(), "general.serial_number",
@@ -1291,7 +1284,8 @@ void ZedCamera::getPosTrackingParams()
     get_logger(), " * Positional tracking mode: "
       << sl::toString(mPosTrkMode).c_str());
 
-  mBaseFrameId = mFramePrefix + mCameraName + "_camera_link";
+  mBaseFrameId = mCameraName;
+  mBaseFrameId += "_camera_link";
 
   sl_tools::getParam(
     shared_from_this(), "pos_tracking.map_frame", mMapFrameId,
@@ -1467,7 +1461,7 @@ void ZedCamera::getGnssFusionParams()
     " * GNSS fusion enabled: ");
 
   if (mGnssFusionEnabled) {
-    mGnssFrameId = mFramePrefix + mCameraName + "_gnss_link";
+    mGnssFrameId = mCameraName + "_gnss_link";
 
     sl_tools::getParam(
       shared_from_this(), "gnss_fusion.gnss_fix_topic",
@@ -4378,7 +4372,7 @@ void ZedCamera::threadFunc_zedGrab()
   #ifdef USE_SVO_REALTIME_PAUSE
           // Lock on Positional Tracking mutex to avoid race conditions
           std::lock_guard<std::mutex> lock(mPtMutex);
-
+          
           // Dummy grab
           mZed->grab();
   #endif
