@@ -1,3 +1,6 @@
+### Currently using `ati/kilted-5.1`, which has been rebased off of the source repo's main
+
+
 <h1 align="center">
    <img src="./images/Picto+STEREOLABS_Black.jpg" alt="Stereolabs" title="Stereolabs" /><br \>
    ROS 2 wrapper
