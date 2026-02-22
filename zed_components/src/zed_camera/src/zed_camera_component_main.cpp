@@ -1989,9 +1989,9 @@ void ZedCamera::setTFCoordFrameNames()
   // ----> Coordinate frames
   mCenterFrameId = mFramePrefix + mCameraName + "_camera_center";
   mLeftCamFrameId = mFramePrefix + mCameraName + "_left_camera_frame";
-  mLeftCamOptFrameId = mFramePrefix + mCameraName + "_left_camera_optical_frame";
+  mLeftCamOptFrameId = mFramePrefix + mCameraName + "_left_camera_frame_optical";
   mRightCamFrameId = mFramePrefix + mCameraName + "_right_camera_frame";
-  mRightCamOptFrameId = mFramePrefix + mCameraName + "_right_camera_optical_frame";
+  mRightCamOptFrameId = mFramePrefix + mCameraName + "_right_camera_frame_optical";
 
   mImuFrameId = mFramePrefix + mCameraName + "_imu_link";
   mBaroFrameId = mCenterFrameId;         // mCameraName + "_baro_link";
