@@ -32,8 +32,9 @@ from launch_ros.actions import (
     Node
 )
 
-# Enable colored output
-os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
+# MGL: don't override the caller
+## Enable colored output
+#os.environ["RCUTILS_COLORIZED_OUTPUT"] = "1"
 
 # ZED Configurations to be loaded by ZED Node
 default_config_common = os.path.join(
