@@ -235,6 +235,7 @@ protected:
     camInfoMsgPtr & camInfoMsg,
     const std::string & imgFrameId,
     const rclcpp::Time & t);
+
 #ifdef FOUND_ISAAC_ROS_NITROS
   void publishImageWithInfo(
     const sl::Mat & img,
@@ -249,8 +250,8 @@ protected:
     const camInfoPub & infoPub,
     camInfoMsgPtr & camInfoMsg, const rclcpp::Time & t);
 
-  void publishDepthMapWithInfo(sl::Mat & depth, rclcpp::Time t);
-  void publishDisparity(sl::Mat disparity, rclcpp::Time t);
+  void publishDepthMapWithInfo(const sl::Mat & depth, const rclcpp::Time & t);
+  void publishDisparity(const sl::Mat & disparity, const rclcpp::Time & t);
 
   void processVideoDepth();
   bool areVideoDepthSubscribed();
@@ -501,6 +502,7 @@ private:
   unsigned int mSensFwVersion;                 // Sensors FW version
   std::string mCameraName = "zed";             // Default camera name
   int mCamGrabFrameRate = 15;
+  double mGrabComputeCappingFps = 0.0;
   bool mAsyncImageRetrieval = false;
   int mImageValidityCheck = 1;
   std::string mSvoFilepath = "";
