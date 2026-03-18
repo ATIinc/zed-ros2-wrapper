@@ -1,4 +1,4 @@
-### Currently using `ati/kilted-5.1`, which has been rebased off of the source repo's main
+### Currently using `ati/kilted-5.2`, which has been rebased off of the source repo's `master`
 
 
 <h1 align="center">
